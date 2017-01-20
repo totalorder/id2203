@@ -21,39 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id2203.kvstore;
+package se.kth.id2203;
 
-import com.google.common.base.MoreObjects;
-import java.io.Serializable;
-import java.util.UUID;
-import se.sics.kompics.KompicsEvent;
+import se.kth.id2203.networking.NetAddress;
+import se.sics.kompics.Channel;
+import se.sics.kompics.Component;
+import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Init;
+import se.sics.kompics.network.Network;
+import se.sics.kompics.network.netty.NettyInit;
+import se.sics.kompics.network.netty.NettyNetwork;
+import se.sics.kompics.timer.Timer;
+import se.sics.kompics.timer.java.JavaTimer;
 
 /**
  *
  * @author Lars Kroll <lkroll@kth.se>
  */
-public class OpResponse implements KompicsEvent, Serializable {
+public class HostComponent extends ComponentDefinition {
 
-    private static final long serialVersionUID = -1668600257615491286L;
+    final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
+    protected final Component timer = create(JavaTimer.class, Init.NONE);
+    protected final Component net = create(NettyNetwork.class, new NettyInit(self));
+    protected final Component parent = create(ParentComponent.class, Init.NONE);
 
-    public final UUID id;
-    public final Code status;
-
-    public OpResponse(UUID id, Code status) {
-        this.id = id;
-        this.status = status;
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("status", status)
-                .toString();
-    }
-
-    public static enum Code {
-
-        OK, NOT_FOUND, NOT_IMPLEMENTED;
+    {
+        connect(timer.getPositive(Timer.class), parent.getNegative(Timer.class), Channel.TWO_WAY);
+        connect(net.getPositive(Network.class), parent.getNegative(Network.class), Channel.TWO_WAY);
     }
 }

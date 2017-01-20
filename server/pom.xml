@@ -1,6 +1,6 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
-    
+
     <parent>
         <groupId>se.kth.id2203</groupId>
         <artifactId>project17</artifactId>
@@ -18,6 +18,12 @@
             <artifactId>project17-common</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.kompics.simulator</groupId>
+            <artifactId>core</artifactId>
+            <version>${kompics.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

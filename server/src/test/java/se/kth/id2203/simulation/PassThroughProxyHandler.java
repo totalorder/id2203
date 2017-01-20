@@ -21,39 +21,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id2203.kvstore;
+package se.kth.id2203.simulation;
 
-import com.google.common.base.MoreObjects;
-import java.io.Serializable;
-import java.util.UUID;
-import se.sics.kompics.KompicsEvent;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 
 /**
- *
+ * Freely adapted from <http://surguy.net/articles/communication-across-classloaders.xml>.
+ * 
  * @author Lars Kroll <lkroll@kth.se>
  */
-public class OpResponse implements KompicsEvent, Serializable {
+class PassThroughProxyHandler implements InvocationHandler {
 
-    private static final long serialVersionUID = -1668600257615491286L;
+    private final Object delegate;
 
-    public final UUID id;
-    public final Code status;
-
-    public OpResponse(UUID id, Code status) {
-        this.id = id;
-        this.status = status;
+    public PassThroughProxyHandler(Object delegate) {
+        this.delegate = delegate;
     }
 
     @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("id", id)
-                .add("status", status)
-                .toString();
-    }
-
-    public static enum Code {
-
-        OK, NOT_FOUND, NOT_IMPLEMENTED;
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        Method delegateMethod = delegate.getClass().getMethod(method.getName(), method.getParameterTypes());
+        return delegateMethod.invoke(delegate, args);
     }
 }

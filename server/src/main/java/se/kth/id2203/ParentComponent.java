@@ -12,37 +12,36 @@ import se.sics.kompics.Channel;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
+import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
-import se.sics.kompics.network.netty.NettyInit;
-import se.sics.kompics.network.netty.NettyNetwork;
 import se.sics.kompics.timer.Timer;
-import se.sics.kompics.timer.java.JavaTimer;
 
 public class ParentComponent
         extends ComponentDefinition {
 
-    final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
-    protected final Component timer = create(JavaTimer.class, Init.NONE);
-    protected final Component net = create(NettyNetwork.class, new NettyInit(self));
+    //******* Ports ******
+    protected final Positive<Network> net = requires(Network.class);
+    protected final Positive<Timer> timer = requires(Timer.class);
+    //******* Children ******
     protected final Component overlay = create(VSOverlayManager.class, Init.NONE);
     protected final Component kv = create(KVService.class, Init.NONE);
+    protected final Component boot;
 
     {
 
         Optional<NetAddress> serverO = config().readValue("id2203.project.bootstrap-address", NetAddress.class);
-        Component c;
         if (serverO.isPresent()) { // start in client mode
-            c = create(BootstrapClient.class, Init.NONE);
+            boot = create(BootstrapClient.class, Init.NONE);
         } else { // start in server mode
-            c = create(BootstrapServer.class, Init.NONE);
+            boot = create(BootstrapServer.class, Init.NONE);
         }
-        connect(timer.getPositive(Timer.class), c.getNegative(Timer.class), Channel.TWO_WAY);
-        connect(net.getPositive(Network.class), c.getNegative(Network.class), Channel.TWO_WAY);
+        connect(timer, boot.getNegative(Timer.class), Channel.TWO_WAY);
+        connect(net, boot.getNegative(Network.class), Channel.TWO_WAY);
         // Overlay
-        connect(c.getPositive(Bootstrapping.class), overlay.getNegative(Bootstrapping.class), Channel.TWO_WAY);
-        connect(net.getPositive(Network.class), overlay.getNegative(Network.class), Channel.TWO_WAY);
+        connect(boot.getPositive(Bootstrapping.class), overlay.getNegative(Bootstrapping.class), Channel.TWO_WAY);
+        connect(net, overlay.getNegative(Network.class), Channel.TWO_WAY);
         // KV
         connect(overlay.getPositive(Routing.class), kv.getNegative(Routing.class), Channel.TWO_WAY);
-        connect(net.getPositive(Network.class), kv.getNegative(Network.class), Channel.TWO_WAY);
+        connect(net, kv.getNegative(Network.class), Channel.TWO_WAY);
     }
 }

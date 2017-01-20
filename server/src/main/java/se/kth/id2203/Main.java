@@ -88,7 +88,7 @@ public class Main {
             ConfigUpdate cu = cb.finalise();
             c.apply(cu, ValueMerger.NONE);
 
-            Kompics.createAndStart(ParentComponent.class);
+            Kompics.createAndStart(HostComponent.class);
         } catch (ParseException ex) {
             System.err.println("Invalid commandline options: " + ex.getMessage());
             formatter.printHelp("... <options>", opts);
