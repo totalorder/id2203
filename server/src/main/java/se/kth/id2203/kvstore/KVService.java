@@ -34,6 +34,8 @@ import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
 
+import se.kth.id2203.components.Whatever;
+
 /**
  *
  * @author Lars Kroll <lkroll@kth.se>
@@ -51,7 +53,7 @@ public class KVService extends ComponentDefinition {
 
         @Override
         public void handle(Operation content, Message context) {
-            LOG.info("Got operation {}! Now implement me please :)", content);
+            LOG.info("Got operation {}! Now implement me please :) " + new Whatever().asd(), content);
             trigger(new Message(self, context.getSource(), new OpResponse(content.id, Code.NOT_IMPLEMENTED)), net);
         }
 
