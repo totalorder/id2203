@@ -25,6 +25,7 @@ package se.kth.id2203.simulation;
 
 import junit.framework.Assert;
 import org.junit.Test;
+import se.sics.kompics.Kompics;
 import se.sics.kompics.simulator.SimulationScenario;
 import se.sics.kompics.simulator.run.LauncherComp;
 
@@ -40,8 +41,9 @@ public class OpsTest {
     @Test
     public void simpleOpsTest() {
         long seed = 123;
+        Integer bootThreshold = Kompics.getConfig().getValue("id2203.project.bootThreshold", Integer.class);
         SimulationScenario.setSeed(seed);
-        SimulationScenario simpleBootScenario = ScenarioGen.simpleOps(3);
+        SimulationScenario simpleBootScenario = ScenarioGen.simpleOps(bootThreshold);
         res.put("messages", NUM_MESSAGES);
         simpleBootScenario.simulate(LauncherComp.class);
         for (int i = 0; i < NUM_MESSAGES; i++) {

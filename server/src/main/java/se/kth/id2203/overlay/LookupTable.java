@@ -26,7 +26,15 @@ package se.kth.id2203.overlay;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.TreeMultimap;
-import java.util.Collection;
+
+import java.math.BigInteger;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import javafx.util.Pair;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.kth.id2203.bootstrapping.NodeAssignment;
 import se.kth.id2203.networking.NetAddress;
 
@@ -35,13 +43,14 @@ import se.kth.id2203.networking.NetAddress;
  * @author Lars Kroll <lkroll@kth.se>
  */
 public class LookupTable implements NodeAssignment {
+    private static Logger LOG = LoggerFactory.getLogger(LookupTable.class);
 
     private static final long serialVersionUID = -8766981433378303267L;
 
     private final TreeMultimap<Integer, NetAddress> partitions = TreeMultimap.create();
 
     public Collection<NetAddress> lookup(String key) {
-        int keyHash = key.hashCode();
+        int keyHash = hash(key);
         Integer partition = partitions.keySet().floor(keyHash);
         if (partition == null) {
             partition = partitions.keySet().last();
@@ -68,9 +77,25 @@ public class LookupTable implements NodeAssignment {
     }
 
     static LookupTable generate(ImmutableSet<NetAddress> nodes) {
-        LookupTable lut = new LookupTable();
-        lut.partitions.putAll(0, nodes);
+        // Create a list of (hash(address), address) tuples ordered by hash(address)
+        final List<Pair<Integer, NetAddress>> keys = nodes.stream()
+                .map(node -> new Pair<>(hash(node.toString()), node))
+                .sorted(Comparator.comparing(Pair::getKey))
+                .collect(Collectors.toList());
+
+        // Create a lookup table where each node is in the partition of its hash,
+        // as well as in the following N partitions.
+        final LookupTable lut = new LookupTable();
+        for (int i = 0; i < keys.size(); i++) {
+            final NetAddress address = keys.get(i).getValue();
+            for (int r = 0; r < 3; r++) {
+                lut.partitions.put(keys.get((i + r) % (keys.size())).getKey(), address);
+            }
+        }
         return lut;
     }
 
+    private static int hash(final String key) {
+        return new BigInteger(DigestUtils.sha1(key.getBytes())).mod(BigInteger.valueOf(Integer.MAX_VALUE)).intValue();
+    }
 }

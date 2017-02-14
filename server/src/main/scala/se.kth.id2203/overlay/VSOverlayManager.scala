@@ -26,7 +26,7 @@ class VSOverlayManager extends ComponentDefinition {
   boot uponEvent {
     case event: GetInitialAssignments => handle {
       LOG.info("Generating LookupTable...")
-      val lut = LookupTable.generate(event.nodes)
+      lut = LookupTable.generate(event.nodes) // TODO: Might be bad to assign here
       LOG.debug("Generated assignments:\n{}", lut)
       trigger(new InitialAssignments(lut), boot)
     }
