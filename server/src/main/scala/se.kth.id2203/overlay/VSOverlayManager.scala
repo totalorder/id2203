@@ -51,7 +51,6 @@ class VSOverlayManager extends ComponentDefinition {
       LOG.info("Forwarding message for key {} to {}", payload.key, target: Any)
       trigger(Message(src, target, payload.msg), net)
     }
-
   }
 
   route uponEvent {
