@@ -57,8 +57,10 @@ public abstract class ScenarioGen {
         }
 
         public void assertResults(final SimulationResultMap res) {
+            int idx = 0;
             for (final ScenarioBuilder.Event event : events) {
-                Assert.assertEquals(event.assertResult, res.get(event.uuid.toString(), String.class));
+                Assert.assertEquals(idx + ": <[" + event.key + "]>" + event.uuid, event.assertResult, res.get(event.uuid.toString(), String.class));
+                idx++;
             }
         }
 
@@ -70,11 +72,13 @@ public abstract class ScenarioGen {
     static class ScenarioBuilder implements Serializable {
         class Event implements Serializable {
             public final Operation1 operation;
+            public final String key;
             public final UUID uuid;
             public final Object assertResult;
 
-            public Event(final Operation1 operation, final UUID uuid, final Object assertResult) {
+            public Event(final Operation1 operation, final String key, final UUID uuid, final Object assertResult) {
                 this.operation = operation;
+                this.key = key;
                 this.uuid = uuid;
                 this.assertResult = assertResult;
             }
@@ -92,23 +96,22 @@ public abstract class ScenarioGen {
             this.servers = servers;
         }
 
-        private ScenarioBuilder withOperation(final Operation1 operation, final UUID uuid, final Object assertResult) {
+        private ScenarioBuilder withClientOperation(final String key, final String value, final Object assertResult) {
+            final UUID uuid = UUID.randomUUID();
             return new ScenarioBuilder(
                     new ImmutableList.Builder<Event>()
                             .addAll(events)
-                            .add(new Event(operation, uuid, assertResult))
+                            .add(new Event(startClientOp(uuid, key, value), key, uuid, assertResult))
                             .build(),
                     servers);
         }
 
         public ScenarioBuilder withGetKey(final String key, final Object assertResult) {
-            final UUID uuid = UUID.randomUUID();
-            return withOperation(startClientOp(uuid, key, null), uuid, assertResult);
+            return withClientOperation(key, null, assertResult);
         }
 
-        public ScenarioBuilder withPut(final String key, final String value, final Object assertResult) {
-            final UUID uuid = UUID.randomUUID();
-            return withOperation(startClientOp(uuid, key, value), uuid, assertResult);
+        public ScenarioBuilder withPutKey(final String key, final String value, final Object assertResult) {
+            return withClientOperation(key, value, assertResult);
         }
 
         public Scenario build() {

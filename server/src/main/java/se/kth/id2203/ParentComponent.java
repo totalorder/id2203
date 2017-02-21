@@ -4,6 +4,7 @@ import com.google.common.base.Optional;
 import se.kth.id2203.bootstrapping.BootstrapClient;
 import se.kth.id2203.bootstrapping.BootstrapServer;
 import se.kth.id2203.bootstrapping.Bootstrapping;
+import se.kth.id2203.components.beb.BestEffortBroadcast;
 import se.kth.id2203.kvstore.KVService;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay.Routing;
@@ -24,11 +25,11 @@ public class ParentComponent
     protected final Positive<Timer> timer = requires(Timer.class);
     //******* Children ******
     protected final Component overlay = create(VSOverlayManager.class, Init.NONE);
+    protected final Component bestEfforBroadcast = create(BestEffortBroadcast.class, Init.NONE);
     protected final Component kv = create(KVService.class, Init.NONE);
     protected final Component boot;
 
     {
-
         Optional<NetAddress> serverO = config().readValue("id2203.project.bootstrap-address", NetAddress.class);
         if (serverO.isPresent()) { // start in client mode
             boot = create(BootstrapClient.class, Init.NONE);

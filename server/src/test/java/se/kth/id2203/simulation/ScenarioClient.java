@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.kvstore.OpResponse;
 import se.kth.id2203.kvstore.Operation;
+import se.kth.id2203.kvstore.PutOperation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay.RouteMsg;
@@ -75,6 +76,9 @@ public class ScenarioClient extends ComponentDefinition {
         @Override
         public void handle(Start event) {
             Operation op = new Operation(key);
+            if (value != null) {
+                op = new PutOperation(key, value);
+            }
             RouteMsg rm = new RouteMsg(op.key(), op); // don't know which partition is responsible, so ask the bootstrap server to forward it
             trigger(new Message(self, server, rm), net);
             pending.put(op.id(), op.key());
@@ -87,11 +91,17 @@ public class ScenarioClient extends ComponentDefinition {
         @Override
         public void handle(OpResponse content, Message context) {
             LOG.debug("Got OpResponse: {}", content);
+            LOG.debug("OpResponse UUID: {}", uuid);
+
             String key = pending.remove(content.id);
-            if (key != null) {
-                res.put(uuid.toString(), content.status.toString());
-            } else {
+            if (key == null) {
                 LOG.warn("ID {} was not pending! Ignoring response.", content.id);
+                return;
+            }
+            if (content.status.equals(OpResponse.Code.OK) && content.value != null) {
+                res.put(uuid.toString(), content.value);
+            }  else {
+                res.put(uuid.toString(), content.status.toString());
             }
         }
     };

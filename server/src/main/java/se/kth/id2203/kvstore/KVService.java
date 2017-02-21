@@ -35,6 +35,7 @@ import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
 
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,23 +57,29 @@ public class KVService extends ComponentDefinition {
         @Override
         public void handle(Operation content, Message context) {
             LOG.info("Got operation: {}", content);
-            if (content instanceof PutOperation) {
-                final PutOperation putOperation = (PutOperation)content;
-                store.put(putOperation.key(), putOperation.value());
-                trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.OK, putOperation.value())), net);
-            } else {
-                final String value = store.get(content.key());
-                if (value == null) {
-                    trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.NOT_FOUND, null)), net);
-                    return;
-                }
-                trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.OK, value)), net);
+            LOG.info(Arrays.toString(store.entrySet().toArray()));
+            final String value = store.get(content.key());
+            if (value == null) {
+                trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.NOT_FOUND, null)), net);
+                return;
             }
+            trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.OK, value)), net);
+        }
+    };
+
+    protected final ClassMatchedHandler<PutOperation, Message> putOpHandler = new ClassMatchedHandler<PutOperation, Message>() {
+        @Override
+        public void handle(PutOperation operation, Message context) {
+            LOG.info("Got operation: {}", operation);
+            store.put(operation.key(), operation.value());
+            LOG.info(Arrays.toString(store.entrySet().toArray()));
+            trigger(new Message(self, context.getSource(), new OpResponse(operation.id(), Code.OK, operation.value())), net);
         }
     };
 
     {
         subscribe(opHandler, net);
+        subscribe(putOpHandler, net);
     }
 
 }

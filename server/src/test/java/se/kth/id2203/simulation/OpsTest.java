@@ -44,6 +44,8 @@ public class OpsTest implements Serializable {
         ScenarioGen.ScenarioBuilder scenarioBuilder = new ScenarioGen.ScenarioBuilder(bootThreshold);
         ScenarioGen.Scenario scenario = scenarioBuilder
                 .withGetKey("asd", "NOT_FOUND")
+                .withPutKey("asd", "hello!", "hello!")
+                .withGetKey("asd", "hello!")
                 .build();
         SimulationResultMap res = SimulationResultSingleton.getInstance();
         scenario.simulate(LauncherComp.class);
