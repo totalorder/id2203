@@ -32,14 +32,14 @@ import se.sics.kompics.KompicsEvent;
  *
  * @author Lars Kroll <lkroll@kth.se>
  */
-public class Operation implements KompicsEvent, Serializable {
+public class JavaOperation implements KompicsEvent, Serializable {
 
     private static final long serialVersionUID = 2525600659083087179L;
 
     public final String key;
     public final UUID id;
 
-    public Operation(String key) {
+    public JavaOperation(String key) {
         this.key = key;
         this.id = UUID.randomUUID();
     }

@@ -106,9 +106,9 @@ public class ClientService extends ComponentDefinition {
         
         @Override
         public void handle(OpWithFuture event) {
-            RouteMsg rm = new RouteMsg(event.op.key, event.op); // don't know which partition is responsible, so ask the bootstrap server to forward it
+            RouteMsg rm = new RouteMsg(event.op.key(), event.op); // don't know which partition is responsible, so ask the bootstrap server to forward it
             trigger(new Message(self, server, rm), net);
-            pending.put(event.op.id, event.f);
+            pending.put(event.op.id(), event.f);
         }
     };
     protected final ClassMatchedHandler<OpResponse, Message> responseHandler = new ClassMatchedHandler<OpResponse, Message>() {

@@ -21,32 +21,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id2203.simulation;
+package se.kth.id2203.kvstore
 
-import org.junit.Test;
-import se.sics.kompics.Kompics;
-import se.sics.kompics.simulator.SimulationScenario;
-import se.sics.kompics.simulator.run.LauncherComp;
+import com.google.common.base.MoreObjects
+import java.io.Serializable
+import java.util.UUID
+import se.sics.kompics.KompicsEvent
 
-import java.io.Serializable;
 
-/**
- *
- * @author Lars Kroll <lkroll@kth.se>
- */
-public class OpsTest implements Serializable {
+@SerialVersionUID(2525600659083087179L)
+class Operation(val key: String) extends KompicsEvent with Serializable {
+  val id: UUID = UUID.randomUUID()
 
-    @Test
-    public void getKeyTest() {
-        long seed = 123;
-        Integer bootThreshold = Kompics.getConfig().getValue("id2203.project.bootThreshold", Integer.class);
-        SimulationScenario.setSeed(seed);
-        ScenarioGen.ScenarioBuilder scenarioBuilder = new ScenarioGen.ScenarioBuilder(bootThreshold);
-        ScenarioGen.Scenario scenario = scenarioBuilder
-                .withGetKey("asd", "NOT_FOUND")
-                .build();
-        SimulationResultMap res = SimulationResultSingleton.getInstance();
-        scenario.simulate(LauncherComp.class);
-        scenario.assertResults(res);
-    }
+  override def toString: String = MoreObjects.toStringHelper(this).add("id", id).add("key", key).toString
 }

@@ -34,7 +34,9 @@ import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
 
-import se.kth.id2203.components.Whatever;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -48,15 +50,25 @@ public class KVService extends ComponentDefinition {
     protected final Positive<Routing> route = requires(Routing.class);
     //******* Fields ******
     final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
+    final Map<String, String> store = new HashMap<>();
     //******* Handlers ******
     protected final ClassMatchedHandler<Operation, Message> opHandler = new ClassMatchedHandler<Operation, Message>() {
-
         @Override
         public void handle(Operation content, Message context) {
-            LOG.info("Got operation {}! Now implement me please :) " + new Whatever().asd(), content);
-            trigger(new Message(self, context.getSource(), new OpResponse(content.id, Code.NOT_IMPLEMENTED)), net);
+            LOG.info("Got operation: {}", content);
+            if (content instanceof PutOperation) {
+                final PutOperation putOperation = (PutOperation)content;
+                store.put(putOperation.key(), putOperation.value());
+                trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.OK, putOperation.value())), net);
+            } else {
+                final String value = store.get(content.key());
+                if (value == null) {
+                    trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.NOT_FOUND, null)), net);
+                    return;
+                }
+                trigger(new Message(self, context.getSource(), new OpResponse(content.id(), Code.OK, value)), net);
+            }
         }
-
     };
 
     {

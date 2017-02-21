@@ -39,6 +39,7 @@ import se.sics.kompics.Handler;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
 import se.sics.kompics.network.Network;
+import se.sics.kompics.simulator.core.SimulatorPort;
 import se.sics.kompics.timer.Timer;
 
 /**
@@ -51,25 +52,34 @@ public class ScenarioClient extends ComponentDefinition {
     //******* Ports ******
     protected final Positive<Network> net = requires(Network.class);
     protected final Positive<Timer> timer = requires(Timer.class);
+    protected final Positive<SimulatorPort> simulator = positive(SimulatorPort.class);
+
     //******* Fields ******
     private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
     private final SimulationResultMap res = SimulationResultSingleton.getInstance();
     private final Map<UUID, String> pending = new TreeMap<>();
+    private UUID uuid;
+    private String key;
+    private String value;
+
+    public ScenarioClient(Init init) {
+        uuid = init.uuid;
+        key = init.key;
+        value = init.value;
+    }
+
     //******* Handlers ******
     protected final Handler<Start> startHandler = new Handler<Start>() {
 
         @Override
         public void handle(Start event) {
-            int messages = res.get("messages", Integer.class);
-            for (int i = 0; i < messages; i++) {
-                Operation op = new Operation("test" + i);
-                RouteMsg rm = new RouteMsg(op.key, op); // don't know which partition is responsible, so ask the bootstrap server to forward it
-                trigger(new Message(self, server, rm), net);
-                pending.put(op.id, op.key);
-                LOG.info("Sending {}", op);
-                res.put(op.key, "SENT");
-            }
+            Operation op = new Operation(key);
+            RouteMsg rm = new RouteMsg(op.key(), op); // don't know which partition is responsible, so ask the bootstrap server to forward it
+            trigger(new Message(self, server, rm), net);
+            pending.put(op.id(), op.key());
+            LOG.info("Sending {}", op);
+            res.put(uuid.toString(), "SENT");
         }
     };
     protected final ClassMatchedHandler<OpResponse, Message> responseHandler = new ClassMatchedHandler<OpResponse, Message>() {
@@ -79,12 +89,24 @@ public class ScenarioClient extends ComponentDefinition {
             LOG.debug("Got OpResponse: {}", content);
             String key = pending.remove(content.id);
             if (key != null) {
-                res.put(key, content.status.toString());
+                res.put(uuid.toString(), content.status.toString());
             } else {
                 LOG.warn("ID {} was not pending! Ignoring response.", content.id);
             }
         }
     };
+
+    public static class Init extends se.sics.kompics.Init<ScenarioClient> {
+        public final UUID uuid;
+        public final String key;
+        public final String value;
+
+        public Init(final UUID uuid, final String key, final String value) {
+            this.uuid = uuid;
+            this.key = key;
+            this.value = value;
+        }
+    }
 
     {
         subscribe(startHandler, control);

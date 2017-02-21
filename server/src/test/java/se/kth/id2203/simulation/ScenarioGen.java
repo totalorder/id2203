@@ -23,10 +23,15 @@
  */
 package se.kth.id2203.simulation;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+
+import com.google.common.collect.ImmutableList;
+import org.junit.Assert;
 import se.kth.id2203.ParentComponent;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.Init;
@@ -35,14 +40,116 @@ import se.sics.kompics.simulator.SimulationScenario;
 import se.sics.kompics.simulator.adaptor.Operation1;
 import se.sics.kompics.simulator.adaptor.distributions.extra.BasicIntSequentialDistribution;
 import se.sics.kompics.simulator.events.system.StartNodeEvent;
+import se.sics.kompics.simulator.run.LauncherComp;
 
 /**
  *
  * @author Lars Kroll <lkroll@kth.se>
  */
 public abstract class ScenarioGen {
+    static class Scenario implements Serializable {
+        private final SimulationScenario simulationScenario;
+        private final ImmutableList<ScenarioBuilder.Event> events;
 
-    private static final Operation1 startServerOp = new Operation1<StartNodeEvent, Integer>() {
+        public Scenario(final SimulationScenario simulationScenario, final ImmutableList<ScenarioBuilder.Event> events) {
+            this.simulationScenario = simulationScenario;
+            this.events = events;
+        }
+
+        public void assertResults(final SimulationResultMap res) {
+            for (final ScenarioBuilder.Event event : events) {
+                Assert.assertEquals(event.assertResult, res.get(event.uuid.toString(), String.class));
+            }
+        }
+
+        public void simulate(final Class<LauncherComp> launcherCompClass) {
+            simulationScenario.simulate(launcherCompClass);
+        }
+    }
+
+    static class ScenarioBuilder implements Serializable {
+        class Event implements Serializable {
+            public final Operation1 operation;
+            public final UUID uuid;
+            public final Object assertResult;
+
+            public Event(final Operation1 operation, final UUID uuid, final Object assertResult) {
+                this.operation = operation;
+                this.uuid = uuid;
+                this.assertResult = assertResult;
+            }
+        }
+
+        final ImmutableList<Event> events;
+        private final int servers;
+
+        public ScenarioBuilder(final int servers) {
+            this(new ImmutableList.Builder<Event>().build(), servers);
+        }
+
+        private ScenarioBuilder(final ImmutableList<Event> events, final int servers) {
+            this.events = events;
+            this.servers = servers;
+        }
+
+        private ScenarioBuilder withOperation(final Operation1 operation, final UUID uuid, final Object assertResult) {
+            return new ScenarioBuilder(
+                    new ImmutableList.Builder<Event>()
+                            .addAll(events)
+                            .add(new Event(operation, uuid, assertResult))
+                            .build(),
+                    servers);
+        }
+
+        public ScenarioBuilder withGetKey(final String key, final Object assertResult) {
+            final UUID uuid = UUID.randomUUID();
+            return withOperation(startClientOp(uuid, key, null), uuid, assertResult);
+        }
+
+        public ScenarioBuilder withPut(final String key, final String value, final Object assertResult) {
+            final UUID uuid = UUID.randomUUID();
+            return withOperation(startClientOp(uuid, key, value), uuid, assertResult);
+        }
+
+        public Scenario build() {
+            return new Scenario(
+                new SimulationScenario() {
+                    {
+                        SimulationScenario.StochasticProcess startCluster = new SimulationScenario.StochasticProcess() {
+                            {
+                                eventInterArrivalTime(constant(1000));
+                                raise(servers, startServerOp, new BasicIntSequentialDistribution(1));
+                            }
+                        };
+
+                        startCluster.start();
+
+                        SimulationScenario.StochasticProcess lastProcess = null;
+                        for (final Event event: events) {
+                            SimulationScenario.StochasticProcess process = new SimulationScenario.StochasticProcess() {
+                                {
+                                    eventInterArrivalTime(constant(1000));
+                                    raise(1, event.operation, new BasicIntSequentialDistribution(1));
+                                }
+                            };
+
+                            if (lastProcess == null) {
+                                process.startAfterTerminationOf(10000, startCluster);
+                            } else {
+                                process.startAfterTerminationOf(10000, lastProcess);
+                            }
+
+                            lastProcess = process;
+                        }
+
+                        terminateAfterTerminationOf(100000, lastProcess);
+                    }
+                }, events);
+        }
+    }
+
+
+    public static final Operation1 startServerOp = new Operation1<StartNodeEvent, Integer>() {
 
         @Override
         public StartNodeEvent generate(final Integer self) {
@@ -92,7 +199,7 @@ public abstract class ScenarioGen {
         }
     };
 
-    private static final Operation1 startClientOp = new Operation1<StartNodeEvent, Integer>() {
+    public static final Operation1 startClientOp(final UUID uuid, final String key, final String value) { return new Operation1<StartNodeEvent, Integer>() {
 
         @Override
         public StartNodeEvent generate(final Integer self) {
@@ -126,7 +233,7 @@ public abstract class ScenarioGen {
 
                 @Override
                 public Init getComponentInit() {
-                    return Init.NONE;
+                    return new ScenarioClient.Init(uuid, key, value);
                 }
 
                 @Override
@@ -138,28 +245,6 @@ public abstract class ScenarioGen {
                 }
             };
         }
-    };
-
-    public static SimulationScenario simpleOps(final int servers) {
-        return new SimulationScenario() {
-            {
-                SimulationScenario.StochasticProcess startCluster = new SimulationScenario.StochasticProcess() {
-                    {
-                        eventInterArrivalTime(constant(1000));
-                        raise(servers, startServerOp, new BasicIntSequentialDistribution(1));
-                    }
-                };
-
-                SimulationScenario.StochasticProcess startClients = new SimulationScenario.StochasticProcess() {
-                    {
-                        eventInterArrivalTime(constant(1000));
-                        raise(1, startClientOp, new BasicIntSequentialDistribution(1));
-                    }
-                };
-                startCluster.start();
-                startClients.startAfterTerminationOf(10000, startCluster);
-                terminateAfterTerminationOf(100000, startClients);
-            }
         };
     }
 }
