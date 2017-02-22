@@ -12,7 +12,7 @@ import se.sics.kompics.simulator.run.LauncherComp
 
 
 object ScenarioGen {
-  class Event[T](val operation: Operation1[_ <: KompicsEvent, _ <: Number], val uuid: UUID, val conf: T, val assertResult: Object, val asserter: (UUID, Object, Int, SimulationResultMap, T) => Unit) extends Serializable {
+  class Event[T](val operation: Operation1[_ <: KompicsEvent, _ <: Number], val uuid: UUID, val conf: T, val assertResult: Object, val sleep: Int, val asserter: (UUID, Object, Int, SimulationResultMap, T) => Unit) extends Serializable {
     def assert(idx: Int, res: SimulationResultMap): Unit = asserter.apply(uuid, assertResult, idx, res, conf)
   }
 
@@ -33,11 +33,17 @@ object ScenarioGen {
   class ScenarioBuilder private(val events: List[Event[_]], val servers: Int) extends Serializable {
     def withOp[T](simulationClient: SimulationClient[T],
                   conf: T,
-                  assertResult: Object
+                  assertResult: Object): ScenarioBuilder = {
+      withOp(simulationClient, conf, assertResult, 10000)
+    }
+    def withOp[T](simulationClient: SimulationClient[T],
+                  conf: T,
+                  assertResult: Object,
+                  sleep: Int
                  ): ScenarioBuilder = {
       val uuid = UUID.randomUUID
       val operation: Operation1[StartNodeEvent, Integer] = simulationClient.start(uuid).apply(conf)
-      new ScenarioBuilder(events :+ new Event[T](operation, uuid, conf, assertResult, simulationClient.assert), servers)
+      new ScenarioBuilder(events :+ new Event[T](operation, uuid, conf, assertResult, sleep, simulationClient.assert), servers)
     }
 
     def this(servers: Int) {
@@ -57,7 +63,7 @@ object ScenarioGen {
             }
           }
           if (lastProcess == null) process.start()
-          else process.startAfterTerminationOf(10000, lastProcess)
+          else process.startAfterTerminationOf(event.sleep, lastProcess)
           lastProcess = process
           idx += 1
         }

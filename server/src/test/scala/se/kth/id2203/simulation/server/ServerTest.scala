@@ -23,7 +23,7 @@ class ServerTest {
       .withOp(ServerBootstrap, ServerConf(), null)
       .withOp(Server, ServerConf(), null)
       .withOp(Server, ServerConf(), null)
-      .withOp(ServerClient, ServerClientConf("asd", null), "NOT_FOUND")
+      .withOp(ServerClient, ServerClientConf("asd", null), "NOT_FOUND", 50000)
       .build
 
     scenario.simulate(classOf[LauncherComp])
@@ -36,7 +36,7 @@ class ServerTest {
       .withOp(ServerBootstrap, ServerConf(), null)
       .withOp(Server, ServerConf(), null)
       .withOp(Server, ServerConf(), null)
-      .withOp(ServerClient, ServerClientConf("asd", "hello!"), "hello!")
+      .withOp(ServerClient, ServerClientConf("asd", "hello!"), "hello!", 50000)
       .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
       .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
       .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
