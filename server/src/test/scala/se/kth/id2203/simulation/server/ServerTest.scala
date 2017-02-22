@@ -1,4 +1,4 @@
-package se.kth.id2203.simulation.full
+package se.kth.id2203.simulation.server
 
 import org.junit.{Before, Test}
 import se.kth.id2203.simulation.{ScenarioGen, SimulationResultMap, SimulationResultSingleton}
@@ -6,7 +6,7 @@ import se.sics.kompics.Kompics
 import se.sics.kompics.simulator.run.LauncherComp
 
 
-class FullTest {
+class ServerTest {
   var bootThreshold: Int = -1
   var scenarioBuilder = new ScenarioGen.ScenarioBuilder(bootThreshold)
   var res: SimulationResultMap = _
@@ -18,10 +18,12 @@ class FullTest {
   }
 
   @Test
-  def broadcast2(): Unit = {
+  def getEmptyKey(): Unit = {
     val scenario = scenarioBuilder
-      .withOp(FullClient, FullClientConf(null, "hola!"), "hola!")
-      .withOp(FullClient, FullClientConf("hola!", "hola!"), "hola!")
+      .withOp(ServerBootstrap, ServerConf(), null)
+      .withOp(Server, ServerConf(), null)
+      .withOp(Server, ServerConf(), null)
+      .withOp(ServerClient, ServerClientConf("asd", null), "NOT_FOUND")
       .build
 
     scenario.simulate(classOf[LauncherComp])
@@ -29,11 +31,16 @@ class FullTest {
   }
 
   @Test
-  def broadcast3(): Unit = {
+  def getPutKey(): Unit = {
     val scenario = scenarioBuilder
-      .withOp(FullClient, FullClientConf(null, "hola!"), "hola!")
-      .withOp(FullClient, FullClientConf(null, "hola!"), "hola!")
-      .withOp(FullClient, FullClientConf("hola!", "hola!"), "hola!")
+      .withOp(ServerBootstrap, ServerConf(), null)
+      .withOp(Server, ServerConf(), null)
+      .withOp(Server, ServerConf(), null)
+      .withOp(ServerClient, ServerClientConf("asd", "hello!"), "hello!")
+      .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
+      .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
+      .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
+      .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
       .build
 
     scenario.simulate(classOf[LauncherComp])

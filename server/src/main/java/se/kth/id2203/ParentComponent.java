@@ -11,7 +11,7 @@ import se.kth.id2203.overlay.Routing;
 import se.kth.id2203.overlay.VSOverlayManager;
 import se.sics.kompics.Channel;
 import se.sics.kompics.Component;
-import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.sl.ComponentDefinition;
 import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
@@ -19,6 +19,11 @@ import se.sics.kompics.timer.Timer;
 
 public class ParentComponent
         extends ComponentDefinition {
+    private final ParentComponentInit init;
+
+    public ParentComponent(ParentComponentInit init) {
+        this.init = init;
+    }
 
     //******* Ports ******
     protected final Positive<Network> net = requires(Network.class);

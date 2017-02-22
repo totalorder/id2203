@@ -44,6 +44,7 @@ import se.kth.id2203.networking.NetAddress;
  */
 public class LookupTable implements NodeAssignment {
     private static Logger LOG = LoggerFactory.getLogger(LookupTable.class);
+    private final static int REPLICATION_FACTOR = 2;
 
     private static final long serialVersionUID = -8766981433378303267L;
 
@@ -88,7 +89,7 @@ public class LookupTable implements NodeAssignment {
         final LookupTable lut = new LookupTable();
         for (int i = 0; i < keys.size(); i++) {
             final NetAddress address = keys.get(i).getValue();
-            for (int r = 0; r < 3; r++) {
+            for (int r = 0; r < REPLICATION_FACTOR; r++) {
                 lut.partitions.put(keys.get((i + r) % (keys.size())).getKey(), address);
             }
         }
