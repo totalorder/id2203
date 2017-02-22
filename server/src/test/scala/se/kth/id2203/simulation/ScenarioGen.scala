@@ -1,13 +1,11 @@
-package se.kth.id2203.simulation.beb
+package se.kth.id2203.simulation
 
 import java.util.UUID
 
-import org.junit.Assert
-import se.kth.id2203.simulation.SimulationResultMap
 import se.sics.kompics.KompicsEvent
 import se.sics.kompics.simulator.SimulationScenario
 import se.sics.kompics.simulator.adaptor.Operation1
-import se.sics.kompics.simulator.adaptor.distributions.extra.BasicIntSequentialDistribution
+import se.sics.kompics.simulator.adaptor.distributions.ConstantDistribution
 import se.sics.kompics.simulator.events.system.StartNodeEvent
 import se.sics.kompics.simulator.run.LauncherComp
 
@@ -50,16 +48,18 @@ object ScenarioGen {
       new SimulationScenario() {
         var lastProcess: SimulationScenario#StochasticProcess = null
 
+        var idx: Int = 1
         for (event <- events) {
           val process: SimulationScenario#StochasticProcess = new StochasticProcess {
             {
               eventInterArrivalTime(constant(1000))
-              raise(1, event.operation.asInstanceOf[Operation1[_ <: KompicsEvent, Integer]], new BasicIntSequentialDistribution(1))
+              raise(1, event.operation.asInstanceOf[Operation1[_ <: KompicsEvent, Integer]], new ConstantDistribution(classOf[Integer], idx.asInstanceOf[Integer]))
             }
           }
           if (lastProcess == null) process.start()
           else process.startAfterTerminationOf(10000, lastProcess)
           lastProcess = process
+          idx += 1
         }
         terminateAfterTerminationOf(100000, lastProcess)
       }, events)

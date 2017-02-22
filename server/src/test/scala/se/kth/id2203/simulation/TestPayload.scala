@@ -1,4 +1,4 @@
-package se.kth.id2203.simulation.beb
+package se.kth.id2203.simulation
 
 import se.sics.kompics.KompicsEvent
 

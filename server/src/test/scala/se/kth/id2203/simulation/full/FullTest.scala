@@ -1,4 +1,4 @@
-package se.kth.id2203.simulation.beb
+package se.kth.id2203.simulation.full
 
 import org.junit.{Before, Test}
 import se.kth.id2203.simulation.{ScenarioGen, SimulationResultMap, SimulationResultSingleton}
@@ -6,7 +6,7 @@ import se.sics.kompics.Kompics
 import se.sics.kompics.simulator.run.LauncherComp
 
 
-class BestEffortBroadcastTest {
+class FullTest {
   var bootThreshold: Int = -1
   var scenarioBuilder = new ScenarioGen.ScenarioBuilder(bootThreshold)
   var res: SimulationResultMap = _
@@ -20,8 +20,8 @@ class BestEffortBroadcastTest {
   @Test
   def broadcast2(): Unit = {
     val scenario = scenarioBuilder
-      .withOp(BestEffortBroadcastClient, BestEffortBroadcastClientConf(null, "hola!"), "hola!")
-      .withOp(BestEffortBroadcastClient, BestEffortBroadcastClientConf("hola!", "hola!"), "hola!")
+      .withOp(FullClient, FullClientConf(null, "hola!"), "hola!")
+      .withOp(FullClient, FullClientConf("hola!", "hola!"), "hola!")
       .build
 
     scenario.simulate(classOf[LauncherComp])
@@ -31,9 +31,9 @@ class BestEffortBroadcastTest {
   @Test
   def broadcast3(): Unit = {
     val scenario = scenarioBuilder
-      .withOp(BestEffortBroadcastClient, BestEffortBroadcastClientConf(null, "hola!"), "hola!")
-      .withOp(BestEffortBroadcastClient, BestEffortBroadcastClientConf(null, "hola!"), "hola!")
-      .withOp(BestEffortBroadcastClient, BestEffortBroadcastClientConf("hola!", "hola!"), "hola!")
+      .withOp(FullClient, FullClientConf(null, "hola!"), "hola!")
+      .withOp(FullClient, FullClientConf(null, "hola!"), "hola!")
+      .withOp(FullClient, FullClientConf("hola!", "hola!"), "hola!")
       .build
 
     scenario.simulate(classOf[LauncherComp])

@@ -1,4 +1,4 @@
-package se.kth.id2203.simulation.beb
+package se.kth.id2203.simulation.full
 
 import java.net.InetAddress
 import java.util.UUID
@@ -6,7 +6,7 @@ import java.util.UUID
 import org.junit.Assert
 import org.slf4j.LoggerFactory
 import se.kth.id2203.components.beb.{BestEffortBroadcastPort, _}
-import se.kth.id2203.networking.{Message, NetAddress}
+import se.kth.id2203.networking.NetAddress
 import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton, TestPayload}
 import se.sics.kompics._
 import se.sics.kompics.network.{Address, Network}
@@ -17,8 +17,8 @@ import se.sics.kompics.simulator.util.GlobalView
 import se.sics.kompics.sl.{ComponentDefinition, NegativePort, PositivePort, handle}
 import se.sics.kompics.timer.Timer
 
-class BestEffortBroadcastClient(init: BestEffortBroadcastClient.Init) extends ComponentDefinition {
-  private val LOG = LoggerFactory.getLogger(classOf[BestEffortBroadcastClient])
+class FullClient(init: FullClient.Init) extends ComponentDefinition {
+  private val LOG = LoggerFactory.getLogger(classOf[FullClient])
   //******* Ports ******
 //  private val bestEffortBroadcast: PositivePort[BestEffortBroadcastPort] = requires[BestEffortBroadcastPort]
   private val net: PositivePort[Network] = requires[Network]
@@ -69,18 +69,19 @@ class BestEffortBroadcastClient(init: BestEffortBroadcastClient.Init) extends Co
   }
 }
 
-case class BestEffortBroadcastClientConf(broadcast: String, receive: String)
+case class FullClientConf(broadcast: String, receive: String)
+case class FullClientInit(uuid: UUID, broadcast: String, receive: String) extends se.sics.kompics.Init[FullClient]
 
-object BestEffortBroadcastClient extends SimulationClient[BestEffortBroadcastClientConf] {
-  case class Init(uuid: UUID, broadcast: String, receive: String) extends se.sics.kompics.Init[BestEffortBroadcastClient]
+object FullClient extends SimulationClient[FullClientConf] {
+  case class Init(uuid: UUID, broadcast: String, receive: String) extends se.sics.kompics.Init[FullClient]
 
-  override def start(uuid: UUID) = (conf: BestEffortBroadcastClientConf) => new Operation1[StartNodeEvent, Integer]() {
+  override def start(uuid: UUID) = (conf: FullClientConf) => new Operation1[StartNodeEvent, Integer]() {
     def generate(self: Integer): StartNodeEvent = new StartEvent(self) {
-      def getComponentDefinition: Class[_ <: ComponentDefinition] = classOf[BestEffortBroadcastClient]
+      def getComponentDefinition: Class[_ <: ComponentDefinition] = classOf[FullClient]
       def getComponentInit: Init = Init(uuid, conf.broadcast, conf.receive)
     }
   }
 
-  override def assert(uuid: UUID, assertResult: Object, idx: Int, res: SimulationResultMap, conf: BestEffortBroadcastClientConf) = Assert.assertEquals(idx + ": <[" + conf.broadcast + "]>" + uuid, assertResult, res.get(uuid.toString, classOf[String])): Unit
+  override def assert(uuid: UUID, assertResult: Object, idx: Int, res: SimulationResultMap, conf: FullClientConf) = Assert.assertEquals(idx + ": <[" + conf.broadcast + "]>" + uuid, assertResult, res.get(uuid.toString, classOf[String])): Unit
 }
 

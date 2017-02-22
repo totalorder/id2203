@@ -46,7 +46,7 @@ import se.sics.kompics.simulator.run.LauncherComp;
  *
  * @author Lars Kroll <lkroll@kth.se>
  */
-public abstract class ScenarioGen {
+public abstract class JavaScenarioGen {
     static class Scenario implements Serializable {
         private final SimulationScenario simulationScenario;
         private final ImmutableList<ScenarioBuilder.Event> events;

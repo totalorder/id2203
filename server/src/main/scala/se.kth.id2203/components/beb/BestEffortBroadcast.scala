@@ -14,17 +14,13 @@ class BestEffortBroadcast extends ComponentDefinition {
 
   bestEffortBroadcast uponEvent {
     case request: BestEffortBroadcastRequest => handle {
-      LOG.debug("Got BestEffortBroadcastRequest event!")
       request.addresses.foreach(address => trigger(Message(self, address, BestEffortBroadcastMessage(self, request.event)), net))
-
-      trigger(BestEffortBroadcastResponse(request.uuid), bestEffortBroadcast)
     }
   }
 
   net uponEvent {
     case Message(src, _, payload: BestEffortBroadcastMessage) => handle {
-      LOG.debug("Got BestEffortBroadcastMessage event!")
-      trigger(payload, bestEffortBroadcast)
+      trigger(BestEffortBroadcastDeliver(payload.src, payload.event), bestEffortBroadcast)
     }
   }
 }
