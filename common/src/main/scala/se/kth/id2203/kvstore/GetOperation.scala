@@ -30,7 +30,7 @@ import se.sics.kompics.KompicsEvent
 
 
 @SerialVersionUID(2525600659083087179L)
-class Operation(val key: String) extends KompicsEvent with Serializable {
+class GetOperation(val key: String) extends KompicsEvent with IdMessage with Serializable {
   val id: UUID = UUID.randomUUID()
 
   override def toString: String = MoreObjects.toStringHelper(this).add("id", id).add("key", key).toString

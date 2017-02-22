@@ -3,6 +3,7 @@ package se.kth.id2203.overlay
 import com.larskroll.common.J6
 import org.slf4j.LoggerFactory
 import se.kth.id2203.bootstrapping.{Booted, Bootstrapping, GetInitialAssignments, InitialAssignments}
+import se.kth.id2203.components.overlay.{GroupMessage, GroupPort}
 import se.kth.id2203.networking.{Message, NetAddress}
 import se.sics.kompics.network.Network
 import se.sics.kompics.sl._
@@ -14,6 +15,7 @@ class VSOverlayManager extends ComponentDefinition {
   private val LOG = LoggerFactory.getLogger(classOf[VSOverlayManager])
   //******* Ports ******
   private val route = provides[Routing]
+  private val group = provides[GroupPort]
   private val boot = requires[Bootstrapping]
   private val net = requires[Network]
   private val timer = requires[Timer]
@@ -38,6 +40,7 @@ class VSOverlayManager extends ComponentDefinition {
         case assignment: LookupTable =>
           LOG.info("Got NodeAssignment, overlay ready.")
           lut = assignment
+          trigger(GroupMessage(assignment), group)
         case _ =>
           LOG.error("Got invalid NodeAssignment type. Expected: LookupTable; Got: {}", event.assignment.getClass)
       }

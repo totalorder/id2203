@@ -29,7 +29,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.kth.id2203.kvstore.OpResponse;
-import se.kth.id2203.kvstore.Operation;
+import se.kth.id2203.kvstore.GetOperation;
 import se.kth.id2203.kvstore.PutOperation;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
@@ -70,41 +70,41 @@ public class ScenarioClient extends ComponentDefinition {
         value = init.value;
     }
 
-    //******* Handlers ******
-    protected final Handler<Start> startHandler = new Handler<Start>() {
-
-        @Override
-        public void handle(Start event) {
-            Operation op = new Operation(key);
-            if (value != null) {
-                op = new PutOperation(key, value);
-            }
-            RouteMsg rm = new RouteMsg(op.key(), op); // don't know which partition is responsible, so ask the bootstrap server to forward it
-            trigger(new Message(self, server, rm), net);
-            pending.put(op.id(), op.key());
-            LOG.info("Sending {}", op);
-            res.put(uuid.toString(), "SENT");
-        }
-    };
-    protected final ClassMatchedHandler<OpResponse, Message> responseHandler = new ClassMatchedHandler<OpResponse, Message>() {
-
-        @Override
-        public void handle(OpResponse content, Message context) {
-            LOG.debug("Got OpResponse: {}", content);
-            LOG.debug("OpResponse UUID: {}", uuid);
-
-            String key = pending.remove(content.id);
-            if (key == null) {
-                LOG.warn("ID {} was not pending! Ignoring response.", content.id);
-                return;
-            }
-            if (content.status.equals(OpResponse.Code.OK) && content.value != null) {
-                res.put(uuid.toString(), content.value);
-            }  else {
-                res.put(uuid.toString(), content.status.toString());
-            }
-        }
-    };
+//    //******* Handlers ******
+//    protected final Handler<Start> startHandler = new Handler<Start>() {
+//
+//        @Override
+//        public void handle(Start event) {
+//            GetOperation op = new GetOperation(key);
+//            if (value != null) {
+//                op = new PutOperation(key, value);
+//            }
+//            RouteMsg rm = new RouteMsg(op.key(), op); // don't know which partition is responsible, so ask the bootstrap server to forward it
+//            trigger(new Message(self, server, rm), net);
+//            pending.put(op.id(), op.key());
+//            LOG.info("Sending {}", op);
+//            res.put(uuid.toString(), "SENT");
+//        }
+//    };
+//    protected final ClassMatchedHandler<OpResponse, Message> responseHandler = new ClassMatchedHandler<OpResponse, Message>() {
+//
+//        @Override
+//        public void handle(OpResponse content, Message context) {
+//            LOG.debug("Got OpResponse: {}", content);
+//            LOG.debug("OpResponse UUID: {}", uuid);
+//
+//            String key = pending.remove(content.id);
+//            if (key == null) {
+//                LOG.warn("ID {} was not pending! Ignoring response.", content.id);
+//                return;
+//            }
+//            if (content.status.equals(OpResponse.Code.OK) && content.value != null) {
+//                res.put(uuid.toString(), content.value);
+//            }  else {
+//                res.put(uuid.toString(), content.status.toString());
+//            }
+//        }
+//    };
 
     public static class Init extends se.sics.kompics.Init<ScenarioClient> {
         public final UUID uuid;
@@ -119,7 +119,7 @@ public class ScenarioClient extends ComponentDefinition {
     }
 
     {
-        subscribe(startHandler, control);
-        subscribe(responseHandler, net);
+//        subscribe(startHandler, control);
+//        subscribe(responseHandler, net);
     }
 }

@@ -43,9 +43,9 @@ import java.util.Map;
  *
  * @author Lars Kroll <lkroll@kth.se>
  */
-public class KVService extends ComponentDefinition {
+public class JavaKVService extends ComponentDefinition {
 
-    final static Logger LOG = LoggerFactory.getLogger(KVService.class);
+    final static Logger LOG = LoggerFactory.getLogger(JavaKVService.class);
     //******* Ports ******
     protected final Positive<Network> net = requires(Network.class);
     protected final Positive<Routing> route = requires(Routing.class);
@@ -53,9 +53,9 @@ public class KVService extends ComponentDefinition {
     final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     final Map<String, String> store = new HashMap<>();
     //******* Handlers ******
-    protected final ClassMatchedHandler<Operation, Message> opHandler = new ClassMatchedHandler<Operation, Message>() {
+    protected final ClassMatchedHandler<GetOperation, Message> opHandler = new ClassMatchedHandler<GetOperation, Message>() {
         @Override
-        public void handle(Operation content, Message context) {
+        public void handle(GetOperation content, Message context) {
             LOG.info("Got operation: {}", content);
             LOG.info(Arrays.toString(store.entrySet().toArray()));
             final String value = store.get(content.key());

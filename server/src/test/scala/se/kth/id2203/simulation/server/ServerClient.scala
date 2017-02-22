@@ -6,7 +6,7 @@ import java.util.UUID
 import org.junit.Assert
 import org.slf4j.LoggerFactory
 import se.kth.id2203.components.beb.{BestEffortBroadcastPort, _}
-import se.kth.id2203.kvstore.{OpResponse, Operation, PutOperation}
+import se.kth.id2203.kvstore.{GetOperation, IdMessage, OpResponse, PutOperation}
 import se.kth.id2203.networking.{Message, NetAddress}
 import se.kth.id2203.overlay.RouteMsg
 import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton, TestPayload}
@@ -34,26 +34,16 @@ class ServerClient(init: ServerClient.Init) extends ComponentDefinition {
   private val pending = new java.util.TreeMap[UUID, String]
   private val uuid = init.uuid
   private val key = init.key
-  private val value = init.value
-//  private val gv = config().getValue("simulation.globalview", classOf[GlobalView])
-//  private val bestEffortBroadcastComponent: Component = create(classOf[BestEffortBroadcast], Init.NONE)
-//  private val bestEffortBroadcast: PositivePort[BestEffortBroadcastPort] = bestEffortBroadcastComponent.getPositive(classOf[BestEffortBroadcastPort]).asInstanceOf[PositivePort[BestEffortBroadcastPort]]
-
-//  connect[Network](net -> bestEffortBroadcastComponent)
-//
-//  if (gv.getValue("besteffortbroadcast.addresses", classOf[List[NetAddress]]) == null) {
-//    gv.setValue("besteffortbroadcast.addresses", List[NetAddress]())
-//  }
-//  // TODO: Race condition?
-//  gv.setValue("besteffortbroadcast.addresses", gv.getValue("besteffortbroadcast.addresses", classOf[List[NetAddress]]) :+ self)
+  private val value_ = Option(init.value)
 
   ctrl uponEvent {
-    case event: Start => handle {
-      var op = new Operation(key)
-      if (value != null) op = new PutOperation(key, value)
-      val rm = new RouteMsg(op.key, op) // don't know which partition is responsible, so ask the bootstrap server to forward it
-      trigger(Message(self, server, rm), net)
-      pending.put(op.id, op.key)
+    case _: Start => handle {
+      val op: IdMessage = value_ match {
+        case Some(value) => new PutOperation(key, value)
+        case None => new GetOperation(key)
+      }
+      trigger(Message(self, server, new RouteMsg(key, op)), net)
+      pending.put(op.id, key)
       LOG.info("Sending {}", op)
       res.put(uuid.toString, "SENT")
     }

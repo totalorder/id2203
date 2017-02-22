@@ -134,7 +134,7 @@ public class ClientService extends ComponentDefinition {
     }
     
     Future<OpResponse> op(String key) {
-        Operation op = new Operation(key);
+        GetOperation op = new GetOperation(key);
         OpWithFuture owf = new OpWithFuture(op);
         trigger(owf, onSelf);
         return owf.f;
@@ -142,10 +142,10 @@ public class ClientService extends ComponentDefinition {
     
     public static class OpWithFuture implements KompicsEvent {
         
-        public final Operation op;
+        public final GetOperation op;
         public final SettableFuture<OpResponse> f;
         
-        public OpWithFuture(Operation op) {
+        public OpWithFuture(GetOperation op) {
             this.op = op;
             this.f = SettableFuture.create();
         }

@@ -5,7 +5,9 @@ import se.kth.id2203.bootstrapping.BootstrapClient;
 import se.kth.id2203.bootstrapping.BootstrapServer;
 import se.kth.id2203.bootstrapping.Bootstrapping;
 import se.kth.id2203.components.beb.BestEffortBroadcast;
-import se.kth.id2203.kvstore.KVService;
+import se.kth.id2203.components.beb.BestEffortBroadcastPort;
+import se.kth.id2203.components.kv.KVStore;
+import se.kth.id2203.components.overlay.GroupPort;
 import se.kth.id2203.networking.NetAddress;
 import se.kth.id2203.overlay.Routing;
 import se.kth.id2203.overlay.VSOverlayManager;
@@ -31,7 +33,7 @@ public class ParentComponent
     //******* Children ******
     protected final Component overlay = create(VSOverlayManager.class, Init.NONE);
     protected final Component bestEfforBroadcast = create(BestEffortBroadcast.class, Init.NONE);
-    protected final Component kv = create(KVService.class, Init.NONE);
+    protected final Component kvStore = create(KVStore.class, Init.NONE);
     protected final Component boot;
 
     {
@@ -47,7 +49,12 @@ public class ParentComponent
         connect(boot.getPositive(Bootstrapping.class), overlay.getNegative(Bootstrapping.class), Channel.TWO_WAY);
         connect(net, overlay.getNegative(Network.class), Channel.TWO_WAY);
         // KV
-        connect(overlay.getPositive(Routing.class), kv.getNegative(Routing.class), Channel.TWO_WAY);
-        connect(net, kv.getNegative(Network.class), Channel.TWO_WAY);
+//        connect(overlay.getPositive(Routing.class), kvStore.getNegative(Routing.class), Channel.TWO_WAY);
+        connect(overlay.getPositive(GroupPort.class), kvStore.getNegative(GroupPort.class), Channel.TWO_WAY);
+
+        connect(net, kvStore.getNegative(Network.class), Channel.TWO_WAY);
+        // Best effort broadcast
+        connect(bestEfforBroadcast.getPositive(BestEffortBroadcastPort.class), kvStore.getNegative(BestEffortBroadcastPort.class), Channel.TWO_WAY);
+        connect(net, bestEfforBroadcast.getNegative(Network.class), Channel.TWO_WAY);
     }
 }
