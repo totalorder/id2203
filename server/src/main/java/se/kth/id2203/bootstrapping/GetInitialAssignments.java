@@ -29,9 +29,9 @@ import se.sics.kompics.KompicsEvent;
 
 public class GetInitialAssignments implements KompicsEvent {
 
-    public final ImmutableSet<NetAddress> nodes;
+    public final ImmutableSet<Node> nodes;
 
-    public GetInitialAssignments(final ImmutableSet<NetAddress> nodes) {
+    public GetInitialAssignments(final ImmutableSet<Node> nodes) {
         this.nodes = nodes;
     }
 }

@@ -57,6 +57,7 @@ public class BootstrapClient extends ComponentDefinition {
     //******* Fields ******
     private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
+    private final UUID id = UUID.randomUUID();
 
     private State state = State.WAITING;
 
@@ -81,7 +82,7 @@ public class BootstrapClient extends ComponentDefinition {
         public void handle(BSTimeout e) {
 
             if (state == State.WAITING) {
-                trigger(new Message(self, server, CheckIn.event), net);
+                trigger(new Message(self, server, new CheckIn(id)), net);
             } else if (state == State.STARTED) {
                 trigger(new Message(self, server, Ready.event), net);
                 suicide();

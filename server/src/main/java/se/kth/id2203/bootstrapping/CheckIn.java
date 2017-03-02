@@ -24,13 +24,17 @@
 package se.kth.id2203.bootstrapping;
 
 import java.io.Serializable;
+import java.util.UUID;
+
 import se.sics.kompics.KompicsEvent;
 
 public class CheckIn implements KompicsEvent, Serializable {
 
-    public final static CheckIn event = new CheckIn();
+//    public final static CheckIn event = new CheckIn();
     private static final long serialVersionUID = -5044901955690784224L;
+    public final UUID id;
 
-    private CheckIn() {
+    public CheckIn(final UUID id) {
+        this.id = id;
     }
 }

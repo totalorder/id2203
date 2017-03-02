@@ -55,7 +55,8 @@ public class BootstrapServer extends ComponentDefinition {
     final int bootThreshold = config().getValue("id2203.project.bootThreshold", Integer.class);
     private State state = State.COLLECTING;
     private UUID timeoutId;
-    private final Set<NetAddress> active = new HashSet<>();
+    private final UUID id = UUID.randomUUID();
+    private final Set<Node> active = new HashSet<>();
     private final Set<NetAddress> ready = new HashSet<>();
     private NodeAssignment initialAssignment = null;
     //******* Handlers ******
@@ -68,7 +69,7 @@ public class BootstrapServer extends ComponentDefinition {
             spt.setTimeoutEvent(new BSTimeout(spt));
             trigger(spt, timer);
             timeoutId = spt.getTimeoutEvent().getTimeoutId();
-            active.add(self);
+            active.add(new Node(id, self));
         }
     };
     protected final Handler<BSTimeout> timeoutHandler = new Handler<BSTimeout>() {
@@ -96,8 +97,8 @@ public class BootstrapServer extends ComponentDefinition {
         public void handle(InitialAssignments e) {
             LOG.info("Seeding assignments...");
             initialAssignment = e.assignment;
-            for (NetAddress node : active) {
-                trigger(new Message(self, node, new Boot(initialAssignment)), net);
+            for (Node node : active) {
+                trigger(new Message(self, node.address(), new Boot(initialAssignment)), net);
             }
             ready.add(self);
         }
@@ -106,7 +107,7 @@ public class BootstrapServer extends ComponentDefinition {
 
         @Override
         public void handle(CheckIn content, Message context) {
-            active.add(context.getSource());
+            active.add(new Node(content.id, context.getSource()));
         }
     };
     protected final ClassMatchedHandler<Ready, Message> readyHandler = new ClassMatchedHandler<Ready, Message>() {

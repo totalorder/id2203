@@ -35,6 +35,7 @@ import javafx.util.Pair;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.kth.id2203.bootstrapping.Node;
 import se.kth.id2203.bootstrapping.NodeAssignment;
 import se.kth.id2203.networking.NetAddress;
 
@@ -77,10 +78,10 @@ public class LookupTable implements NodeAssignment {
         return sb.toString();
     }
 
-    static LookupTable generate(ImmutableSet<NetAddress> nodes) {
+    static LookupTable generate(ImmutableSet<Node> nodes) {
         // Create a list of (hash(address), address) tuples ordered by hash(address)
         final List<Pair<Integer, NetAddress>> keys = nodes.stream()
-                .map(node -> new Pair<>(hash(node.toString()), node))
+                .map(node -> new Pair<>(hash(node.id().toString()), node.address()))
                 .sorted(Comparator.comparing(Pair::getKey))
                 .collect(Collectors.toList());
 
