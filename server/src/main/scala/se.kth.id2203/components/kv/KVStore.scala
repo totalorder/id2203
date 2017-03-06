@@ -11,7 +11,6 @@ import se.kth.id2203.networking.{Message, NetAddress}
 import se.kth.id2203.overlay.LookupTable
 import se.sics.kompics.network.Network
 import se.sics.kompics.sl._
-import se.sics.kompics.timer.Timer
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -33,7 +32,7 @@ class KVStore extends ComponentDefinition {
   group uponEvent {
     case message: GroupMessage => handle {
       lut = message.lookupTable
-      LOG.info("Got group membership: {}", lut)
+      LOG.info("Got group membership: {}", message)
     }
   }
 
@@ -50,7 +49,6 @@ class KVStore extends ComponentDefinition {
   net uponEvent {
     case Message(src, dst, operation: PutOperation) => handle {
       LOG.info("Got put operation: {}", operation)
-//      store.put(operation.key, operation.value)
       trigger(BestEffortBroadcastRequest(WriteRequest(operation.key, operation.value), lut.lookup(operation.key).asScala.toList), bestEffortBroadcast)
       trigger(Message(self, src, new OpResponse(operation.id, Code.OK, operation.value)), net)
     }

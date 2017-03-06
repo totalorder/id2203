@@ -25,11 +25,15 @@ package se.kth.id2203.bootstrapping;
 
 import se.sics.kompics.KompicsEvent;
 
+import java.util.UUID;
+
 public class Booted implements KompicsEvent {
 
+    public final UUID id;
     public final NodeAssignment assignment;
 
-    public Booted(final NodeAssignment assignment) {
+    public Booted(final UUID id, final NodeAssignment assignment) {
+        this.id = id;
         this.assignment = assignment;
     }
 }

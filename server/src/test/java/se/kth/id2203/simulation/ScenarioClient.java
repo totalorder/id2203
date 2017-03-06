@@ -81,7 +81,7 @@ public class ScenarioClient extends ComponentDefinition {
 //            }
 //            RouteMsg rm = new RouteMsg(op.key(), op); // don't know which partition is responsible, so ask the bootstrap server to forward it
 //            trigger(new Message(self, server, rm), net);
-//            pending.put(op.id(), op.key());
+//            pending.put(op.pid(), op.key());
 //            LOG.info("Sending {}", op);
 //            res.put(uuid.toString(), "SENT");
 //        }
@@ -93,9 +93,9 @@ public class ScenarioClient extends ComponentDefinition {
 //            LOG.debug("Got OpResponse: {}", content);
 //            LOG.debug("OpResponse UUID: {}", uuid);
 //
-//            String key = pending.remove(content.id);
+//            String key = pending.remove(content.pid);
 //            if (key == null) {
-//                LOG.warn("ID {} was not pending! Ignoring response.", content.id);
+//                LOG.warn("ID {} was not pending! Ignoring response.", content.pid);
 //                return;
 //            }
 //            if (content.status.equals(OpResponse.Code.OK) && content.value != null) {

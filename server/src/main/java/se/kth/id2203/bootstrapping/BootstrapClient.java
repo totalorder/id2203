@@ -96,7 +96,7 @@ public class BootstrapClient extends ComponentDefinition {
         public void handle(Boot content, Message context) {
             if (state == State.WAITING) {
                 LOG.info("{} Booting up.", self);
-                trigger(new Booted(content.assignment), bootstrap);
+                trigger(new Booted(id, content.assignment), bootstrap);
                 trigger(new CancelPeriodicTimeout(timeoutId), timer);
                 trigger(new Message(self, server, Ready.event), net);
                 state = State.STARTED;

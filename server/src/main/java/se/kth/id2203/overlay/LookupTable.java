@@ -97,7 +97,7 @@ public class LookupTable implements NodeAssignment {
         return lut;
     }
 
-    private static int hash(final String key) {
+    public static int hash(final String key) {
         return new BigInteger(DigestUtils.sha1(key.getBytes())).mod(BigInteger.valueOf(Integer.MAX_VALUE)).intValue();
     }
 }

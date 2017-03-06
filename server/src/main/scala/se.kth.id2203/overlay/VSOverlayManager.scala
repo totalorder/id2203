@@ -2,8 +2,9 @@ package se.kth.id2203.overlay
 
 import com.larskroll.common.J6
 import org.slf4j.LoggerFactory
+import scala.collection.JavaConverters._
 import se.kth.id2203.bootstrapping.{Booted, Bootstrapping, GetInitialAssignments, InitialAssignments}
-import se.kth.id2203.components.overlay.{GroupMessage, GroupPort}
+import se.kth.id2203.components.overlay.{GroupPort, GroupMessage}
 import se.kth.id2203.networking.{Message, NetAddress}
 import se.sics.kompics.network.Network
 import se.sics.kompics.sl._
@@ -40,7 +41,8 @@ class VSOverlayManager extends ComponentDefinition {
         case assignment: LookupTable =>
           LOG.info("Got NodeAssignment, overlay ready.")
           lut = assignment
-          trigger(GroupMessage(assignment), group)
+          val pid = LookupTable.hash(event.id.toString)
+          trigger(GroupMessage(pid, assignment.lookup(event.id.toString).asScala.toList, assignment), group)
         case _ =>
           LOG.error("Got invalid NodeAssignment type. Expected: LookupTable; Got: {}", event.assignment.getClass)
       }

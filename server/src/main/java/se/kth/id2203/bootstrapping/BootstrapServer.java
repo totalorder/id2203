@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.kth.id2203.bootstrapping.BootstrapServer.State;
 import se.kth.id2203.networking.Message;
 import se.kth.id2203.networking.NetAddress;
 import se.sics.kompics.ClassMatchedHandler;
@@ -84,7 +83,7 @@ public class BootstrapServer extends ComponentDefinition {
                 LOG.info("{} hosts in ready set.", ready.size());
                 if (ready.size() >= bootThreshold) {
                     LOG.info("Finished seeding. Bootstrapping complete.");
-                    trigger(new Booted(initialAssignment), boot);
+                    trigger(new Booted(id, initialAssignment), boot);
                     state = State.DONE;
                 }
             } else if (state == State.DONE) {
