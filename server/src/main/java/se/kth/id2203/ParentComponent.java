@@ -22,6 +22,12 @@ import se.sics.kompics.timer.Timer;
 public class ParentComponent
         extends ComponentDefinition {
 
+    public ParentComponent(ParentComponentInit init) {
+    }
+
+    public ParentComponent() {
+    }
+
     //******* Ports ******
     protected final Positive<Network> net = requires(Network.class);
     protected final Positive<Timer> timer = requires(Timer.class);
