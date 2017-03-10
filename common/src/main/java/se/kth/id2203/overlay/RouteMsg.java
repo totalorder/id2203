@@ -24,6 +24,8 @@
 package se.kth.id2203.overlay;
 
 import java.io.Serializable;
+import java.util.UUID;
+
 import se.sics.kompics.KompicsEvent;
 
 /**
@@ -36,8 +38,10 @@ public class RouteMsg implements KompicsEvent, Serializable {
 
     public final KompicsEvent msg;
     public final String key;
+    public final UUID id;
 
-    public RouteMsg(String key, KompicsEvent msg) {
+    public RouteMsg(UUID id, String key, KompicsEvent msg) {
+        this.id = id;
         this.key = key;
         this.msg = msg;
     }

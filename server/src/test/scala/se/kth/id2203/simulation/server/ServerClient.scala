@@ -1,28 +1,23 @@
 package se.kth.id2203.simulation.server
-
-import java.net.InetAddress
 import java.util.UUID
 
 import org.junit.Assert
 import org.slf4j.LoggerFactory
-import se.kth.id2203.components.beb.{BestEffortBroadcastPort, _}
-import se.kth.id2203.kvstore.{GetOperation, IdMessage, OpResponse, PutOperation}
+import se.kth.id2203.kvstore._
 import se.kth.id2203.networking.{Message, NetAddress}
 import se.kth.id2203.overlay.RouteMsg
-import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton, TestPayload}
+import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton}
 import se.sics.kompics._
-import se.sics.kompics.network.{Address, Network}
+import se.sics.kompics.network.Network
 import se.sics.kompics.simulator.adaptor.Operation1
 import se.sics.kompics.simulator.core.SimulatorPort
 import se.sics.kompics.simulator.events.system.StartNodeEvent
-import se.sics.kompics.simulator.util.GlobalView
-import se.sics.kompics.sl.{ComponentDefinition, NegativePort, PositivePort, handle}
+import se.sics.kompics.sl.{ComponentDefinition, PositivePort, handle}
 import se.sics.kompics.timer.Timer
 
 class ServerClient(init: ServerClient.Init) extends ComponentDefinition {
   private val LOG = LoggerFactory.getLogger(classOf[ServerClient])
   //******* Ports ******
-//  private val bestEffortBroadcast: PositivePort[BestEffortBroadcastPort] = requires[BestEffortBroadcastPort]
   private val net: PositivePort[Network] = requires[Network]
   private val timer = requires[Timer]
   private val simulator = requires[SimulatorPort]
@@ -42,7 +37,7 @@ class ServerClient(init: ServerClient.Init) extends ComponentDefinition {
         case Some(value) => new PutOperation(key, value)
         case None => new GetOperation(key)
       }
-      trigger(Message(self, server, new RouteMsg(key, op)), net)
+      trigger(Message(self, server, new RouteMsg(op.id, key, op)), net)
       pending.put(op.id, key)
       LOG.info("Sending {}", op)
       res.put(uuid.toString, "SENT")
@@ -50,17 +45,15 @@ class ServerClient(init: ServerClient.Init) extends ComponentDefinition {
   }
 
   net uponEvent {
-    case Message(src, dst, opResponse: OpResponse) => handle {
+    case Message(src, dst, opResponse: OperationResponse) => handle {
       LOG.debug("Got OpResponse: {}", opResponse)
-      LOG.debug("OpResponse UUID: {}", uuid)
       val key = pending.remove(opResponse.id)
       key match {
         case null => LOG.warn("ID {} was not pending! Ignoring response.", opResponse.id)
         case _ => {
-          if (opResponse.status == OpResponse.Code.OK && opResponse.value != null) {
-            res.put(uuid.toString, opResponse.value)
-          } else {
-            res.put(uuid.toString, opResponse.status.toString)
+          opResponse match {
+            case putResponse: PutOperationResponse => res.put(uuid.toString, "OK")
+            case getResponse: GetOperationResponse => res.put(uuid.toString, Option(getResponse.value).getOrElse("NOT_FOUND"))
           }
         }
       }

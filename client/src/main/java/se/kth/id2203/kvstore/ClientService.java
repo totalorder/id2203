@@ -60,7 +60,7 @@ public class ClientService extends ComponentDefinition {
     private final NetAddress self = config().getValue("id2203.project.address", NetAddress.class);
     private final NetAddress server = config().getValue("id2203.project.bootstrap-address", NetAddress.class);
     private Optional<Connect.Ack> connected = Optional.absent();
-    private final Map<UUID, SettableFuture<OpResponse>> pending = new TreeMap<>();
+    private final Map<UUID, SettableFuture<OperationResponse>> pending = new TreeMap<>();
 
     //******* Handlers ******
     protected final Handler<Start> startHandler = new Handler<Start>() {
@@ -106,21 +106,31 @@ public class ClientService extends ComponentDefinition {
         
         @Override
         public void handle(OpWithFuture event) {
-            RouteMsg rm = new RouteMsg(event.op.key(), event.op); // don't know which partition is responsible, so ask the bootstrap server to forward it
+            RouteMsg rm = new RouteMsg(event.op.id(), event.op.key(), event.op); // don't know which partition is responsible, so ask the bootstrap server to forward it
             trigger(new Message(self, server, rm), net);
             pending.put(event.op.id(), event.f);
         }
     };
-    protected final ClassMatchedHandler<OpResponse, Message> responseHandler = new ClassMatchedHandler<OpResponse, Message>() {
-        
+    protected final ClassMatchedHandler<GetOperationResponse, Message> getResponseHandler = new ClassMatchedHandler<GetOperationResponse, Message>() {
         @Override
-        public void handle(OpResponse content, Message context) {
-            LOG.debug("Got OpResponse: {}", content);
-            SettableFuture<OpResponse> sf = pending.remove(content.id);
+        public void handle(GetOperationResponse content, Message context) {
+            SettableFuture<OperationResponse> sf = pending.remove(content.id());
             if (sf != null) {
                 sf.set(content);
             } else {
-                LOG.warn("ID {} was not pending! Ignoring response.", content.id);
+                LOG.warn("ID {} was not pending! Ignoring response.", content.id());
+            }
+        }
+    };
+
+    protected final ClassMatchedHandler<PutOperationResponse, Message> putResponseHandler = new ClassMatchedHandler<PutOperationResponse, Message>() {
+        @Override
+        public void handle(PutOperationResponse content, Message context) {
+            SettableFuture<OperationResponse> sf = pending.remove(content.id());
+            if (sf != null) {
+                sf.set(content);
+            } else {
+                LOG.warn("ID {} was not pending! Ignoring response.", content.id());
             }
         }
     };
@@ -130,11 +140,19 @@ public class ClientService extends ComponentDefinition {
         subscribe(timeoutHandler, timer);
         subscribe(connectHandler, net);
         subscribe(opHandler, loopback);
-        subscribe(responseHandler, net);
+        subscribe(getResponseHandler, net);
+        subscribe(putResponseHandler, net);
     }
     
-    Future<OpResponse> op(String key) {
+    Future<OperationResponse> getOp(String key) {
         GetOperation op = new GetOperation(key);
+        OpWithFuture owf = new OpWithFuture(op);
+        trigger(owf, onSelf);
+        return owf.f;
+    }
+
+    Future<OperationResponse> putOp(String key, String value) {
+        PutOperation op = new PutOperation(key, value);
         OpWithFuture owf = new OpWithFuture(op);
         trigger(owf, onSelf);
         return owf.f;
@@ -142,10 +160,10 @@ public class ClientService extends ComponentDefinition {
     
     public static class OpWithFuture implements KompicsEvent {
         
-        public final GetOperation op;
-        public final SettableFuture<OpResponse> f;
+        public final Operation op;
+        public final SettableFuture<OperationResponse> f;
         
-        public OpWithFuture(GetOperation op) {
+        public OpWithFuture(Operation op) {
             this.op = op;
             this.f = SettableFuture.create();
         }

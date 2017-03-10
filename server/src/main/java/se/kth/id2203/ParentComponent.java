@@ -6,10 +6,10 @@ import se.kth.id2203.bootstrapping.BootstrapServer;
 import se.kth.id2203.bootstrapping.Bootstrapping;
 import se.kth.id2203.components.beb.BestEffortBroadcast;
 import se.kth.id2203.components.beb.BestEffortBroadcastPort;
-import se.kth.id2203.components.kv.KVStore;
 import se.kth.id2203.components.overlay.GroupPort;
+import se.kth.id2203.components.riwcm.RIWCMPort;
+import se.kth.id2203.components.riwcm.ReadImposeWriteConsultMajority;
 import se.kth.id2203.networking.NetAddress;
-import se.kth.id2203.overlay.Routing;
 import se.kth.id2203.overlay.VSOverlayManager;
 import se.sics.kompics.Channel;
 import se.sics.kompics.Component;
@@ -21,11 +21,6 @@ import se.sics.kompics.timer.Timer;
 
 public class ParentComponent
         extends ComponentDefinition {
-    private final ParentComponentInit init;
-
-    public ParentComponent(ParentComponentInit init) {
-        this.init = init;
-    }
 
     //******* Ports ******
     protected final Positive<Network> net = requires(Network.class);
@@ -33,7 +28,7 @@ public class ParentComponent
     //******* Children ******
     protected final Component overlay = create(VSOverlayManager.class, Init.NONE);
     protected final Component bestEfforBroadcast = create(BestEffortBroadcast.class, Init.NONE);
-    protected final Component kvStore = create(KVStore.class, Init.NONE);
+    protected final Component riwcmComponent = create(ReadImposeWriteConsultMajority.class, Init.NONE);
     protected final Component boot;
 
     {
@@ -48,13 +43,11 @@ public class ParentComponent
         // Overlay
         connect(boot.getPositive(Bootstrapping.class), overlay.getNegative(Bootstrapping.class), Channel.TWO_WAY);
         connect(net, overlay.getNegative(Network.class), Channel.TWO_WAY);
-        // KV
-//        connect(overlay.getPositive(Routing.class), kvStore.getNegative(Routing.class), Channel.TWO_WAY);
-        connect(overlay.getPositive(GroupPort.class), kvStore.getNegative(GroupPort.class), Channel.TWO_WAY);
-
-        connect(net, kvStore.getNegative(Network.class), Channel.TWO_WAY);
-        // Best effort broadcast
-        connect(bestEfforBroadcast.getPositive(BestEffortBroadcastPort.class), kvStore.getNegative(BestEffortBroadcastPort.class), Channel.TWO_WAY);
         connect(net, bestEfforBroadcast.getNegative(Network.class), Channel.TWO_WAY);
+
+        connect(bestEfforBroadcast.getPositive(BestEffortBroadcastPort.class), riwcmComponent.getNegative(BestEffortBroadcastPort.class), Channel.TWO_WAY);
+        connect(overlay.getPositive(GroupPort.class), riwcmComponent.getNegative(GroupPort.class), Channel.TWO_WAY);
+        connect(riwcmComponent.getPositive(RIWCMPort.class), overlay.getNegative(RIWCMPort.class), Channel.TWO_WAY);
+        connect(net, riwcmComponent.getNegative(Network.class), Channel.TWO_WAY);
     }
 }

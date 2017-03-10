@@ -36,7 +36,7 @@ class ServerTest {
       .withOp(ServerBootstrap, ServerConf(), null)
       .withOp(Server, ServerConf(), null)
       .withOp(Server, ServerConf(), null)
-      .withOp(ServerClient, ServerClientConf("asd", "hello!"), "hello!", 50000)
+      .withOp(ServerClient, ServerClientConf("asd", "hello!"), "OK", 50000)
       .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
       .withOp(ServerClient, ServerClientConf("asd", null), "hello!")
       .withOp(ServerClient, ServerClientConf("asd", null), "hello!")

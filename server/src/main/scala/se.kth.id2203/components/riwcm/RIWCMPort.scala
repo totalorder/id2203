@@ -6,6 +6,7 @@ class RIWCMPort extends PortType {
   {
     request(classOf[RIWCMRead])
     request(classOf[RIWCMWrite])
-    indication(classOf[RIWCMResponse])
+    indication(classOf[RIWCMReadResponse])
+    indication(classOf[RIWCMWriteResponse])
   }
 }

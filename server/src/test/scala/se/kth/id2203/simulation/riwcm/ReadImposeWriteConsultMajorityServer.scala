@@ -10,9 +10,9 @@ import se.kth.id2203.components.overlay.{GroupMessage, GroupPort}
 import se.kth.id2203.components.riwcm._
 import se.kth.id2203.networking.{Message, NetAddress}
 import se.kth.id2203.overlay.LookupTable
-import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton, TestPayload}
+import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton}
 import se.sics.kompics._
-import se.sics.kompics.network.{Address, Network}
+import se.sics.kompics.network.Network
 import se.sics.kompics.simulator.adaptor.Operation1
 import se.sics.kompics.simulator.core.SimulatorPort
 import se.sics.kompics.simulator.events.system.StartNodeEvent
@@ -94,7 +94,13 @@ class ReadImposeWriteConsultMajorityServer(init: ReadImposeWriteConsultMajorityS
   }
 
   riwcm uponEvent {
-    case response: RIWCMResponse => handle {
+    case response: RIWCMReadResponse => handle {
+      trigger(Message(self, requests(response.id), response), net)
+    }
+  }
+
+  riwcm uponEvent {
+    case response: RIWCMWriteResponse => handle {
       trigger(Message(self, requests(response.id), response), net)
     }
   }

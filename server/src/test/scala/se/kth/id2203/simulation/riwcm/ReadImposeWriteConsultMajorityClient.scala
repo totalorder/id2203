@@ -1,16 +1,14 @@
 package se.kth.id2203.simulation.riwcm
 
-import java.net.InetAddress
 import java.util.UUID
 
 import scala.collection.JavaConverters._
 import com.larskroll.common.J6
 import org.junit.Assert
 import org.slf4j.LoggerFactory
-import se.kth.id2203.components.beb.{BestEffortBroadcastPort, _}
-import se.kth.id2203.components.riwcm.RIWCMResponse
+import se.kth.id2203.components.riwcm.{RIWCMReadResponse, RIWCMWriteResponse}
 import se.kth.id2203.networking.{Message, NetAddress}
-import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton, TestPayload}
+import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton}
 import se.sics.kompics._
 import se.sics.kompics.network.{Address, Network}
 import se.sics.kompics.simulator.adaptor.Operation1
@@ -23,7 +21,6 @@ import se.sics.kompics.timer.Timer
 class ReadImposeWriteConsultMajorityClient(init: ReadImposeWriteConsultMajorityClient.Init) extends ComponentDefinition {
   private val LOG = LoggerFactory.getLogger(classOf[ReadImposeWriteConsultMajorityClient])
   //******* Ports ******
-//  private val bestEffortBroadcast: PositivePort[BestEffortBroadcastPort] = requires[BestEffortBroadcastPort]
   private val net: PositivePort[Network] = requires[Network]
   private val timer = requires[Timer]
   private val simulator = requires[SimulatorPort]
@@ -34,13 +31,7 @@ class ReadImposeWriteConsultMajorityClient(init: ReadImposeWriteConsultMajorityC
   private val res = SimulationResultSingleton.getInstance
   private val pending = new java.util.TreeMap[UUID, String]
   private val uuid = init.uuid
-//  private val key = init.broadcast
-//  private val value = init.receive
   private val gv = config().getValue("simulation.globalview", classOf[GlobalView])
-//  private val bestEffortBroadcastComponent: Component = create(classOf[BestEffortBroadcast], Init.NONE)
-//  private val bestEffortBroadcast: PositivePort[BestEffortBroadcastPort] = bestEffortBroadcastComponent.getPositive(classOf[BestEffortBroadcastPort]).asInstanceOf[PositivePort[BestEffortBroadcastPort]]
-
-//  connect[Network](net -> bestEffortBroadcastComponent)
 
   control.asInstanceOf[NegativePort[ControlPort]] uponEvent {
     case event: Start => handle {
@@ -57,9 +48,16 @@ class ReadImposeWriteConsultMajorityClient(init: ReadImposeWriteConsultMajorityC
 
 
   net uponEvent {
-    case Message(src, dst, response: RIWCMResponse) => handle {
+    case Message(src, dst, response: RIWCMReadResponse) => handle {
       LOG.info(s"Response: $response")
       res.put(uuid.toString, response.value.getOrElse("NOT_FOUND"))
+    }
+  }
+
+  net uponEvent {
+    case Message(src, dst, response: RIWCMWriteResponse) => handle {
+      LOG.info(s"Response: $response")
+      res.put(uuid.toString, "WRITTEN")
     }
   }
 }

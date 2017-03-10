@@ -104,7 +104,7 @@ class ReadImposeWriteConsultMajority extends ComponentDefinition {
           throw new RuntimeException(s"Already exists in readList: $internalReadResponse")
         }
 
-        readList += ReadData(ts, wr, store.get(internalReadResponse.key), internalReadResponse.pid)
+        readList += ReadData(ts, wr, internalReadResponse.value, internalReadResponse.pid)
 
         if (readList.length > replicationGroup.length / 2) {
           val maxReadData = readList.sortBy(readData => (readData.ts, readData.wr)).last
@@ -151,9 +151,9 @@ class ReadImposeWriteConsultMajority extends ComponentDefinition {
           acks = 0
           if (reading) {
             reading = false
-            trigger(RIWCMResponse(ack.uuid, ack.key, readVal), riwcm)
+            trigger(RIWCMReadResponse(ack.uuid, ack.key, readVal), riwcm)
           } else {
-            trigger(RIWCMResponse(ack.uuid, ack.key, Option("WRITTEN")), riwcm)
+            trigger(RIWCMWriteResponse(ack.uuid, ack.key), riwcm)
           }
           operationActive = null
           processOperations()
