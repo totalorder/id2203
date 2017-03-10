@@ -1,5 +1,7 @@
 package se.kth.id2203.components.riwcm
 
+import java.util.UUID
+
 import org.slf4j.LoggerFactory
 import se.kth.id2203.components.beb.{BestEffortBroadcastDeliver, BestEffortBroadcastPort, BestEffortBroadcastRequest}
 import se.kth.id2203.components.overlay.{GroupMessage, GroupPort}
@@ -34,6 +36,8 @@ class ReadImposeWriteConsultMajority extends ComponentDefinition {
 
   var replicationGroup: List[NetAddress] = _
   var pid: Int = _
+  var operationActive: UUID = _
+  var queuedOperations: mutable.ListBuffer[KompicsEvent] = mutable.ListBuffer()
 
   group uponEvent {
     case message: GroupMessage => handle {
@@ -45,11 +49,43 @@ class ReadImposeWriteConsultMajority extends ComponentDefinition {
 
   riwcm uponEvent {
     case read: RIWCMRead => handle {
-      rid += 1
-      acks = 0
-      readList.clear()
-      reading = true
-      triggerBeb(RIWCMInternalRead(read.uuid, pid, read.key, rid))
+      queuedOperations += read
+      processOperations()
+    }
+  }
+
+  def processOperations(): Unit = {
+    if (operationActive == null && queuedOperations.nonEmpty) {
+      queuedOperations.remove(0) match {
+        case read: RIWCMRead => handleRead(read)
+        case write: RIWCMWrite => handleWrite(write)
+      }
+      processOperations()
+    }
+  }
+
+  def handleRead(read: RIWCMRead): Unit = {
+    operationActive = read.uuid
+    rid += 1
+    acks = 0
+    readList.clear()
+    reading = true
+    triggerBeb(RIWCMInternalRead(read.uuid, pid, read.key, rid))
+  }
+
+  def handleWrite(write: RIWCMWrite): Unit = {
+    operationActive = write.uuid
+    rid += 1
+    writeVal = write.value
+    acks = 0
+    readList.clear()
+    triggerBeb(RIWCMInternalRead(write.uuid, pid, write.key, rid))
+  }
+
+  riwcm uponEvent {
+    case write: RIWCMWrite => handle {
+      queuedOperations += write
+      processOperations()
     }
   }
 
@@ -89,15 +125,6 @@ class ReadImposeWriteConsultMajority extends ComponentDefinition {
     }
   }
 
-  riwcm uponEvent {
-    case write: RIWCMWrite => handle {
-      rid += 1
-      writeVal = write.value
-      acks = 0
-      readList.clear()
-      triggerBeb(RIWCMInternalRead(write.uuid, pid, write.key, rid))
-    }
-  }
 
   bestEffortBroadcast uponEvent {
     case BestEffortBroadcastDeliver(src, internalWrite: RIWCMInternalWrite) => handle {
@@ -115,14 +142,22 @@ class ReadImposeWriteConsultMajority extends ComponentDefinition {
 
   net uponEvent {
     case Message(_, _, ack: RIWCMInternalAck) => handle {
-      LOG.info("Received ack")
-      acks += 1
-      if (acks > replicationGroup.length / 2) {
-        acks = 0
-        if (reading) {
-          reading = false
+      if (!ack.uuid.equals(operationActive)) {
+        LOG.info("Received INVALID ack")
+      } else {
+        LOG.info("Received ack")
+        acks += 1
+        if (acks > replicationGroup.length / 2) {
+          acks = 0
+          if (reading) {
+            reading = false
+            trigger(RIWCMResponse(ack.uuid, ack.key, readVal), riwcm)
+          } else {
+            trigger(RIWCMResponse(ack.uuid, ack.key, Option("WRITTEN")), riwcm)
+          }
+          operationActive = null
+          processOperations()
         }
-        trigger(RIWCMResponse(ack.uuid, ack.key, readVal), riwcm)
       }
     }
   }

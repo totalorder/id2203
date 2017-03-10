@@ -47,7 +47,11 @@ class ReadImposeWriteConsultMajorityClient(init: ReadImposeWriteConsultMajorityC
       val addresses = gv.getValue("readimposeconsultmajority.addresses", classOf[List[NetAddress]])
       val address = J6.randomElement(addresses.asJava)
 
-      trigger(Message(self, address, RIWCMServerRead(UUID.randomUUID(), init.key)), net)
+      if (init.value.isDefined) {
+        trigger(Message(self, address, RIWCMServerWrite(UUID.randomUUID(), init.key, init.value.get)), net)
+      } else {
+        trigger(Message(self, address, RIWCMServerRead(UUID.randomUUID(), init.key)), net)
+      }
     }
   }
 
@@ -60,7 +64,8 @@ class ReadImposeWriteConsultMajorityClient(init: ReadImposeWriteConsultMajorityC
   }
 }
 
-case class ReadImposeWriteConsultMajorityClientConf(key: String, value: Option[String])
+case class ReadImposeWriteConsultMajorityClientConf(key: String, value: String)
+case class Sticky(id: String, assertObject: Object)
 
 object ReadImposeWriteConsultMajorityClient extends SimulationClient[ReadImposeWriteConsultMajorityClientConf] {
   case class Init(uuid: UUID, key: String, value: Option[String]) extends se.sics.kompics.Init[ReadImposeWriteConsultMajorityClient]
@@ -68,10 +73,29 @@ object ReadImposeWriteConsultMajorityClient extends SimulationClient[ReadImposeW
   override def start(uuid: UUID) = (conf: ReadImposeWriteConsultMajorityClientConf) => new Operation1[StartNodeEvent, Integer]() {
     def generate(self: Integer): StartNodeEvent = new StartEvent(self) {
       def getComponentDefinition: Class[_ <: ComponentDefinition] = classOf[ReadImposeWriteConsultMajorityClient]
-      def getComponentInit: Init = Init(uuid, conf.key, conf.value)
+      def getComponentInit: Init = Init(uuid, conf.key, Option(conf.value))
     }
   }
 
-  override def assert(uuid: UUID, assertResult: Object, idx: Int, res: SimulationResultMap, conf: ReadImposeWriteConsultMajorityClientConf) = Assert.assertEquals(idx + ": <[" + conf.key + "]>" + uuid, assertResult, res.get(uuid.toString, classOf[String])): Unit
+  override def assert(uuid: UUID, assertResult: Object, idx: Int, res: SimulationResultMap, conf: ReadImposeWriteConsultMajorityClientConf): Unit = {
+    val message = idx + ": <[" + conf.key + "]>" + uuid
+    val actual = res.get(uuid.toString, classOf[String])
+
+    assertResult match {
+      case expected: String => Assert.assertEquals(message, expected, actual)
+      case expected: Set[Object] => Assert.assertTrue(expected.contains(actual))
+      case expected: Sticky => {
+        val current = res.get(expected.id, classOf[String])
+        println(s"$current == $actual")
+        if (current != null) {
+          Assert.assertEquals(current, actual)
+        } else {
+          res.put(expected.id, actual)
+        }
+
+        assert(uuid, expected.assertObject, idx, res, conf)
+      }
+    }
+  }
 }
 

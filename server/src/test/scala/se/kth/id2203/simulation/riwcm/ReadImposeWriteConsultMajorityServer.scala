@@ -7,7 +7,7 @@ import org.junit.Assert
 import org.slf4j.LoggerFactory
 import se.kth.id2203.components.beb.{BestEffortBroadcastPort, _}
 import se.kth.id2203.components.overlay.{GroupMessage, GroupPort}
-import se.kth.id2203.components.riwcm.{RIWCMPort, RIWCMRead, RIWCMResponse, ReadImposeWriteConsultMajority}
+import se.kth.id2203.components.riwcm._
 import se.kth.id2203.networking.{Message, NetAddress}
 import se.kth.id2203.overlay.LookupTable
 import se.kth.id2203.simulation.{SimulationClient, SimulationResultMap, SimulationResultSingleton, TestPayload}
@@ -25,6 +25,7 @@ import scala.collection.mutable
 case class Addresses(addresses: List[NetAddress]) extends KompicsEvent with Serializable
 
 case class RIWCMServerRead(uuid: UUID, key: String) extends KompicsEvent with Serializable
+case class RIWCMServerWrite(uuid: UUID, key: String, value: String) extends KompicsEvent with Serializable
 
 class ReadImposeWriteConsultMajorityServer(init: ReadImposeWriteConsultMajorityServer.Init) extends ComponentDefinition {
   private val LOG = LoggerFactory.getLogger(classOf[ReadImposeWriteConsultMajorityServer])
@@ -81,6 +82,14 @@ class ReadImposeWriteConsultMajorityServer(init: ReadImposeWriteConsultMajorityS
       val readMesage = RIWCMRead(read.key)
       requests.put(readMesage.uuid, src)
       trigger(readMesage, riwcm)
+    }
+  }
+
+  net uponEvent {
+    case Message(src, _, write: RIWCMServerWrite) => handle {
+      val writeMessage = RIWCMWrite(write.key, write.value)
+      requests.put(writeMessage.uuid, src)
+      trigger(writeMessage, riwcm)
     }
   }
 

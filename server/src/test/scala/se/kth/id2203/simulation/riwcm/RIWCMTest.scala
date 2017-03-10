@@ -29,4 +29,71 @@ class RIWCMTest {
     scenario.simulate(classOf[LauncherComp])
     scenario.assertResults(res)
   }
+
+  @Test
+  def getPutKey(): Unit = {
+    val scenario = scenarioBuilder
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "NOT_FOUND")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", "qwe"), "WRITTEN")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "qwe")
+      .build
+
+    scenario.simulate(classOf[LauncherComp])
+    scenario.assertResults(res)
+  }
+
+  @Test
+  def sequentialWrites(): Unit = {
+    val scenario = scenarioBuilder
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "NOT_FOUND")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", "qwe"), "WRITTEN")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "qwe")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", "zxc"), "WRITTEN")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "zxc")
+      .build
+
+    scenario.simulate(classOf[LauncherComp])
+    scenario.assertResults(res)
+  }
+
+  @Test
+  def concurrentWrites(): Unit = {
+    val scenario = scenarioBuilder
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "NOT_FOUND")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", "qwe"), "WRITTEN", 0)
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", "zxc"), "WRITTEN", 0)
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), Sticky("Same read", Set("zxc", "qwe")))
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), Sticky("Same read", Set("zxc", "qwe")))
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), Sticky("Same read", Set("zxc", "qwe")))
+      .build
+
+    scenario.simulate(classOf[LauncherComp])
+    scenario.assertResults(res)
+  }
+
+  @Test
+  def concurrentReads(): Unit = {
+    val scenario = scenarioBuilder
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityServer, ReadImposeWriteConsultMajorityServerConf(3), "OK")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "NOT_FOUND")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", "qwe"), "WRITTEN")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "qwe")
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "qwe", 0)
+      .withOp(ReadImposeWriteConsultMajorityClient, ReadImposeWriteConsultMajorityClientConf("asd", null), "qwe", 0)
+      .build
+
+    scenario.simulate(classOf[LauncherComp])
+    scenario.assertResults(res)
+  }
 }
